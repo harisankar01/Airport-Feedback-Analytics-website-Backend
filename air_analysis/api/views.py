@@ -1,4 +1,4 @@
-from operator import ne
+
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords, wordnet
 from nltk import tokenize, pos_tag
@@ -24,6 +24,13 @@ coll = db["airport_feedbacks"]
 @api_view(['GET'])
 def getRoutes(request):
     fields = coll.find({}).limit(20)
+    time_graph = coll.find(
+        {"airport_name": "portland-airport"}, {"_id": 0, "airport_name": 1, "date": 1, "overall_rating": 1}).sort("date")
+    time_details = []
+    for i in time_graph:
+        i["date"] = i["date"].strftime("%d %B, %Y")
+        if i["overall_rating"] != "":
+            time_details.append(i)
     # print(list(fields))
     # modell = Airport_feedbacks()
     # val = modell.objects.all()
@@ -38,7 +45,6 @@ def getRoutes(request):
         #     print('{}: {}, '.format(key, pred[key]), end='')
         # print("/n")
         analise = pred["compound"]
-        # max_key = max(pred, key=pred.get)
         if analise >= 0.5:
             pos += 1
         elif analise < -0.5:
@@ -46,10 +52,14 @@ def getRoutes(request):
         else:
             neu += 1
     print("calue", pos, neg, neu)
-    json_object = {
-        "positive": pos,
-        "negative": neg,
-        "neutral": neu
+    json_object = [
+        {"name": "positive", "value": pos},
+        {"name": "negative", "value": neg},
+        {"name": "neutral", "value": neg},
+    ]
+
+    final_ob = {
+        "sentiment": json_object,
+        "time_analysis": time_details
     }
-    return JsonResponse(json_object, safe=False)
-# Create your views here.
+    return JsonResponse(final_ob, safe=False)
