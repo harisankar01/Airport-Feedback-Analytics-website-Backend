@@ -6,3 +6,4 @@ class AirPort_serializer(serializers.ModelSerializer):
     class Meta:
         model = Airport_feedbacks
         fields = "__all__"
+        allow_blank = True

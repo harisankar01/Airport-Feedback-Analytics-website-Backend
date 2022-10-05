@@ -1,19 +1,35 @@
-
+import datetime
+from lib2to3.pgen2 import token
+from bs4 import BeautifulSoup
+import requests
+from django.views.decorators.csrf import csrf_exempt
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from nltk.corpus import stopwords, wordnet
-from nltk import tokenize, pos_tag
 import nltk
-from re import I
+from rest_framework.parsers import JSONParser
 from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import Airport_feedbacks
+from rake_nltk import Rake
 from .searializer import AirPort_serializer
 from pymongo import MongoClient
+import nltk
+from nltk import Tree
+# from snippets.serializers import SnippetSerializer
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize, sent_tokenize
+stop_words = set(stopwords.words('english'))
+
+
+# For Gensim
 client = MongoClient('mongodb://localhost:27017')
 db = client['Airport_review_analysis']
 coll = db["airport_feedbacks"]
+food_db = db["food airlines"]
+sid = SentimentIntensityAnalyzer()
+# nltk.download("omw-1.4")
+# sp = spacy.load("en_core_web_sm")
 # from pymongo import Connection
 # server = "localhost"
 # port = 27017
@@ -24,8 +40,9 @@ coll = db["airport_feedbacks"]
 @api_view(['GET'])
 def getRoutes(request):
     fields = coll.find({}).limit(20)
+    # print(fields)
     time_graph = coll.find(
-        {"airport_name": "portland-airport"}, {"_id": 0, "airport_name": 1, "date": 1, "overall_rating": 1}).sort("date")
+        {"airport_name": "mumbai-airport"}, {"_id": 0, "airport_name": 1, "date": 1, "overall_rating": 1}).sort("date")
     time_details = []
     for i in time_graph:
         i["date"] = i["date"].strftime("%d %B, %Y")
@@ -37,10 +54,27 @@ def getRoutes(request):
     # for i in val:
     #     print(i)
     pos, neg, neu = 0, 0, 0
-    seri = AirPort_serializer(fields, many=True)
-    sid = SentimentIntensityAnalyzer()
+    seri = AirPort_serializer(
+        fields, many=True, allow_null=True, required=False)
+    count_array = [0, 0, 0, 0, 0, 0, 0, 0]
+    arr_ll = ["queuing_rating", "terminal_cleanliness_rating",
+              "terminal_seating_rating", "terminal_signs_rating", "food_beverages_rating",
+              "airport_shopping_rating", "wifi_connectivity_rating", "airport_staff_rating"]
+    comments_fin = []
     for i in seri.data:
+        # print(i)
         pred = sid.polarity_scores(i["content"])
+        for j in arr_ll:
+            if i[j] == "":
+                i[j] = "0"
+        count_array[0] += float(i["queuing_rating"])
+        count_array[1] += float(i["terminal_cleanliness_rating"])
+        count_array[2] += float(i["terminal_seating_rating"])
+        count_array[3] += float(i["terminal_signs_rating"])
+        count_array[4] += float(i["food_beverages_rating"])
+        count_array[5] += float(i["airport_shopping_rating"])
+        count_array[6] += float(i["wifi_connectivity_rating"])
+        count_array[7] += float(i["airport_staff_rating"])
         # for key in sorted(pred.keys()):
         #     print('{}: {}, '.format(key, pred[key]), end='')
         # print("/n")
@@ -48,18 +82,225 @@ def getRoutes(request):
         if analise >= 0.5:
             pos += 1
         elif analise < -0.5:
+            comments_fin.append({
+                "content": i["content"],
+                "user_name": i["author"],
+                "date": i["date"],
+                "user_country": i["author_country"],
+                "rating": float(i["overall_rating"]) % 5
+            })
             neg += 1
         else:
             neu += 1
-    print("calue", pos, neg, neu)
+    # print("calue", pos, neg, neu)
     json_object = [
         {"name": "positive", "value": pos},
         {"name": "negative", "value": neg},
         {"name": "neutral", "value": neg},
     ]
-
+    count_array = [i/5 for i in count_array]
+    # print(count_array)
+    r = requests.get(
+        "https://unsplash.com/s/photos/mumbai-airport").text
+    soup = BeautifulSoup(r, 'html.parser')
+    images = soup.find_all('img')
+    # print(images[5]["src"])
+    comments_fin.sort(
+        key=lambda x: datetime.datetime.strptime(x['date'], '%Y-%m-%dT00:00:00Z'))
     final_ob = {
         "sentiment": json_object,
-        "time_analysis": time_details
+        "time_analysis": time_details,
+        "rating_analysis": count_array,
+        "image": images[15]["src"],
+        "tickets": comments_fin
     }
     return JsonResponse(final_ob, safe=False)
+
+
+@api_view(['GET'])
+def getWord(request):
+    fields = coll.find({"airport_name": "chennai-airport"},
+                       {"_id": 0, "content": 1}).limit(15)
+    feautures = ["airport", "terminal", "check in",
+                 "security", "queue", "experience", "toilets", "shop"]
+    senti_dict = {
+        "airport": {
+            "pos": 0,
+            "neg": 0,
+            "neu": 0,
+            "remarks": [],
+            "good_points": [],
+            "neutal_points": []
+        },
+        "terminal": {
+            "pos": 0,
+            "neg": 0,
+            "neu": 0,
+            "remarks": [],
+            "good_points": [],
+            "neutal_points": []
+        },
+        "check in": {
+            "pos": 0,
+            "neg": 0,
+            "neu": 0,
+            "remarks": [],
+            "good_points": [],
+            "neutal_points": []
+        },
+        "security": {
+            "pos": 0,
+            "neg": 0,
+            "neu": 0,
+            "remarks": [],
+            "good_points": [],
+            "neutal_points": []
+        },
+        "queue": {
+            "pos": 0,
+            "neg": 0,
+            "neu": 0,
+            "remarks": [],
+            "good_points": [],
+            "neutal_points": []
+        },
+        "experience": {
+            "pos": 0,
+            "neg": 0,
+            "neu": 0,
+            "remarks": [],
+            "good_points": [],
+            "neutal_points": []
+        },
+        "toilets": {
+            "pos": 0,
+            "neg": 0,
+            "neu": 0,
+            "remarks": [],
+            "neutal_points": []
+        },
+        "shop": {
+            "pos": 0,
+            "neg": 0,
+            "neu": 0,
+            "remarks": [],
+            "good_points": [],
+            "neutal_points": []
+        },
+    }
+
+    for i in fields:
+        tokenized = sent_tokenize(i["content"].lower().replace("-", " "))
+        for line in tokenized:
+            # print(line)
+            for j in feautures:
+                tokens = word_tokenize(line)
+                filtered_sentence = [
+                    w for w in tokens if not w.lower() in stop_words]
+                tagged = nltk.pos_tag(filtered_sentence)
+                if j in line:
+                    senti = sid.polarity_scores(line)["compound"]
+                    if senti >= 0.5:
+                        senti_dict[j]["pos"] += 1
+                        for i in tagged:
+                            if i[1] == "JJ":
+                                senti_dict[j]["good_points"].extend([i[0]])
+                    elif senti < -0.5:
+                        senti_dict[j]["neg"] += 1
+                        for i in tagged:
+                            if i[1] == "JJ":
+                                senti_dict[j]["remarks"].extend([i[0]])
+                    else:
+                        senti_dict[j]["neu"] += 1
+                        for i in tagged:
+                            if i[1] == "JJ":
+                                senti_dict[j]["neutal_points"].extend([i[0]])
+                    # print(j)
+
+                else:
+                    continue
+
+            # print(tagged)
+            # for i in tagged:
+            #     print(i)
+    # ll=senti_dict.items()
+    ll = []
+    for key, value in senti_dict.items():
+        ll.append({
+            key: value
+        })
+    return JsonResponse(ll, safe=False)
+
+
+@csrf_exempt
+def change_db(request):
+    if request.method == "POST":
+        data = JSONParser().parse(request)
+        fields = coll.find({"$and": [{"airport_name": "chennai-airport"}, {"content": {"$regex": str(data), '$options': 'i'}}]},
+                           {"_id": 0, "content": 1, "author": 1, "date": 1, "overall_rating": 1, "author_country": 1}).limit(15)
+        fina_arr = []
+        for i in fields:
+            print(i)
+            if i["overall_rating"] == "":
+                i["overall_rating"] = 0
+            fina_arr.append({
+                "content": i["content"],
+                "user_name": i["author"],
+                "date": i["date"].strftime("%d %B, %Y"),
+                "user_country": i["author_country"],
+                "rating": float(i["overall_rating"]) % 5
+            })
+        fina_arr.sort(
+            key=lambda x: datetime.datetime.strptime(x['date'], '%Y-%m-%dT00:00:00Z'))
+        print(fina_arr)
+    return JsonResponse(fina_arr, safe=False)
+
+
+"""
+big_arr = []
+    for i in fields:
+        final_dic = {}
+        tokenized = sent_tokenize(i["content"])
+        for i in tokenized:
+            adj_list = []
+            wordsList = nltk.word_tokenize(i)
+            tagged = nltk.pos_tag(wordsList)
+
+            for j, i in enumerate(tagged):
+                if i[1] == "JJ":
+                    try:
+                        if (j-1 > 0 and j-1 < len(tagged)) and (tagged[j-1][1] == "NN" or tagged[j-1][1] == "NNS"):
+                            adj_list.append(tagged[j-1][0]+" "+i[0])
+                        else:
+                            adj_list.append(i[0])
+                    except:
+                        print("Its")
+                if i[1] == "CC" and j+1 < len(tagged)-1:
+                    if tagged[j+1][1] in ["NNP", "NN"]:
+                        # print("CURRINKFKNDSKNDNKSM")
+                        tagged = tagged[index(tagged.index(i))+1:]
+                        adj_list = []
+                        continue
+                if tagged[0][1] == "JJ" and len(tagged) > 8:
+                    break
+                if tagged[0][1] in ["NNP", "NN"] and tagged[1][1] not in ["NNP", "NN", "CC"] and tagged[1][1] != "PRP":
+                    if tagged[0][0] in final_dic.keys():
+                        adj_list = [
+                            j for j in adj_list if j not in final_dic[tagged[0][0]]]
+                        final_dic[tagged[0][0]].extend(adj_list)
+                    else:
+                        final_dic[tagged[0][0]] = adj_list
+                else:
+                    if (i[1] in ["NN", "NNS", "NNPS", "NNP"] or i[0] == "terminal") and (j-1 > 0 and j-1 < len(tagged)):
+                        if tagged[j-1][1] not in ["TO", "DT"]:
+                            # print("TSAGGEGRD:", tagged[j-1][1])
+                            if i[0] in final_dic.keys() and adj_list != []:
+                                adj_list = [
+                                    j for j in adj_list if j not in final_dic[i[0]]]
+                                final_dic[i[0]].extend(adj_list)
+                            elif i[0] not in final_dic.keys() and adj_list != [] and adj_list != None:
+                                final_dic.update({i[0]: list(adj_list)})
+                            adj_list = []
+            # print(final_dic)
+        big_arr.append(final_dic)
+"""
