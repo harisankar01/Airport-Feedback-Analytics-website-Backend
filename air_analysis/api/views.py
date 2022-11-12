@@ -236,7 +236,7 @@ def getWord(request):
 def change_db(request):
     if request.method == "POST":
         data = JSONParser().parse(request)
-        fields = coll.find({"$and": [{"airport_name": "chennai-airport"}, {"content": {"$regex": str(data), '$options': 'i'}}]},
+        fields = coll.find({"$and": [{"airport_name": "chennai-airport"}, {"content": {"$regex": data["tag"], '$options': 'i'}}]},
                            {"_id": 0, "content": 1, "author": 1, "date": 1, "overall_rating": 1, "author_country": 1}).limit(15)
         fina_arr = []
         for i in fields:
@@ -251,8 +251,8 @@ def change_db(request):
                 "rating": float(i["overall_rating"]) % 5
             })
         fina_arr.sort(
-            key=lambda x: datetime.datetime.strptime(x['date'], '%Y-%m-%dT00:00:00Z'))
-        print(fina_arr)
+            key=lambda x: datetime.datetime.strptime(x['date'], '%d %B, %Y'))
+        # print(fina_arr)
     return JsonResponse(fina_arr, safe=False)
 
 
