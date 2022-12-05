@@ -90,8 +90,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'djongo',
         'CLIENT': {
-            "host": "mongodb://localhost:27017",
-            "name": "Airport_review_analysis",
+            "host": "mongodb://localhost/mydb",
+            "name": "Airport_Analysis",
         }
     }
 }

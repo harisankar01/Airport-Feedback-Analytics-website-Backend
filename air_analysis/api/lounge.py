@@ -8,16 +8,17 @@ from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
 import pandas as pd
-client = MongoClient('mongodb://localhost:27017')
-db = client['Airport_review_analysis']
+client = MongoClient(
+    'mongodb://localhost/mydb')
+db = client['Airport_Analysis']
 food_db = db["lounge"]
 schedule_db = db["flight_schedule"]
 sid = SentimentIntensityAnalyzer()
 
 
 @api_view(['GET'])
-def getFood(request):
-    data = "chennai-airport"
+def LoungeReviews(request, airport):
+    data = airport
     data = data.split("-")[0].capitalize()
     # print(data)
     flights = schedule_db.find(
@@ -79,23 +80,25 @@ def getFood(request):
                         senti = sid.polarity_scores(line)["compound"]
                         if senti >= 0.5:
                             senti_dict["pos"] += 1
-                            for j, i in enumerate(tagged):
-                                if i[1] == "JJ":
+                            for j, tag in enumerate(tagged):
+                                if tag[1] == "JJ":
                                     if tagged[j+1][1] == "NN" or "NNP":
-                                        semi = str(i[0])+str(tagged[j+1][1])
+                                        semi = str(tag[0]) + \
+                                            str(tagged[j+1][1])
                                         json_op["pos_items"].extend([semi])
                                     else:
                                         continue
-                                    json_op["pos_items"].extend([i[0]])
+                                    json_op["pos_items"].extend([tag[0]])
                         elif senti <= -0.5:
                             senti_dict["neg"] += 1
-                            comment_fin.append({
-                                "content": i["content"],
-                                "user_name": i["author"],
-                                "date": i["date"],
-                                "user_country": i["author_country"],
-                                "rating": float(i["overall_rating"]) % 5
-                            })
+                            if type(i) is not tuple:
+                                comment_fin.append({
+                                    "content": i["content"],
+                                    "user_name": i["author"],
+                                    "date": i["date"],
+                                    "user_country": i["author_country"],
+                                    "rating": float(i["overall_rating"]) % 5
+                                })
                             for j, i in enumerate(tagged):
                                 if i[1] == "JJ":
                                     if tagged[j+1][1] == "NN" or "NNP":
@@ -129,9 +132,9 @@ def getFood(request):
         {"name": "neutral", "value": senti_dict["neu"]},
     ]
     arrow_fin = [
-        {"name": 'Group 1', "data": arrow["rating"]},
-        {"name": 'Group 2', "data": arrow["recomm"]},
-        {"name": 'Group 3', "data": arrow["value"]}
+        {"name": 'Rating', "data": arrow["rating"]},
+        {"name": 'Recommended', "data": arrow["recomm"]},
+        {"name": 'Value for Money', "data": arrow["value"]}
     ]
     for val in arrow_fin:
         for j, cc in enumerate(val["data"]):

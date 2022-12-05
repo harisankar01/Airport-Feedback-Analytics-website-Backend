@@ -8,24 +8,16 @@ from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
 import pandas as pd
-from pymongo.server_api import ServerApi
-import dns.resolver
-dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
-dns.resolver.default_resolver.nameservers = ['8.8.8.8']
 client = MongoClient(
-    'mongodb://localhost/mydb',
-    server_api=ServerApi('1'),
-    serverSelectionTimeoutMS=5000
-)
+    'mongodb://localhost/mydb')
 db = client['Airport_Analysis']
-food_db = db["food airlines"]
+food_db = db["airline_seats"]
 schedule_db = db["flight_schedule"]
-print(client.server_info())
 sid = SentimentIntensityAnalyzer()
 
 
 @api_view(['GET'])
-def getFood(request, airport):
+def getReviews(request, airport):
     data = airport
     data = data.split("-")[0].capitalize()
     # print(data)
@@ -66,8 +58,8 @@ def getFood(request, airport):
             continue
         fields = food_db.find({"airline_name": su}).limit(15)
 
-        food_names = ["food", "meals", "snacks", "drinks",
-                      "complimentary", "cuisine", "Champagne", "menus"]
+        food_names = ["screen", "seat", "comfortable", "service",
+                      "food", "customers", "sleep", "legs", "cost"]
         for i in fields:
 
             # print(i)
@@ -75,8 +67,8 @@ def getFood(request, airport):
                 i["overall_rating"] = 0
             arrow["rating"].extend([i["overall_rating"]])
             arrow["recomm"].extend(([(i["recommended"]+1)*5]))
-            arrow["value"].extend([i["value_money_rating"]])
-            valie += i["overall_rating"] + i["food_beverages_rating"]
+            arrow["value"].extend([i["seat_legroom_rating"]])
+            valie += i["overall_rating"] + i["viewing_tv_rating"]
             senti = sid.polarity_scores(i["content"])["compound"]
             tokenized = sent_tokenize(i["content"].lower())
             for line in tokenized:
@@ -88,25 +80,27 @@ def getFood(request, airport):
                         senti = sid.polarity_scores(line)["compound"]
                         if senti >= 0.5:
                             senti_dict["pos"] += 1
-                            for j, i in enumerate(tagged):
-                                if i[1] == "JJ":
+                            for j, tag in enumerate(tagged):
+                                if tag[1] == "JJ" and j+1 < len(tagged):
                                     if tagged[j+1][1] == "NN" or "NNP":
-                                        semi = str(i[0])+str(tagged[j+1][1])
+                                        semi = str(tag[0]) + \
+                                            str(tagged[j+1][1])
                                         json_op["pos_items"].extend([semi])
                                     else:
                                         continue
-                                    json_op["pos_items"].extend([i[0]])
+                                    json_op["pos_items"].extend([tag[0]])
                         elif senti <= -0.5:
                             senti_dict["neg"] += 1
-                            comment_fin.append({
-                                "content": i["content"],
-                                "user_name": i["author"],
-                                "date": i["date"],
-                                "user_country": i["author_country"],
-                                "rating": float(i["overall_rating"]) % 5
-                            })
+                            if type(i) is not tuple:
+                                comment_fin.append({
+                                    "content": i["content"],
+                                    "user_name": i["author"],
+                                    "date": i["date"],
+                                    "user_country": i["author_country"],
+                                    "rating": float(i["overall_rating"]) % 5
+                                })
                             for j, i in enumerate(tagged):
-                                if i[1] == "JJ":
+                                if i[1] == "JJ" and j+1 < len(tagged):
                                     if tagged[j+1][1] == "NN" or "NNP":
                                         semi = str(i[0])+str(tagged[j+1][1])
                                         json_op["neg_items"].extend([semi])
@@ -119,20 +113,18 @@ def getFood(request, airport):
             "label": su,
             "value": valie+10
         })
-    try:
-        for j, i in enumerate(airplain_food):
-            if i["value"] in ["NaN", "nan"]:
-                del airplain_food[j]
-            if i["value"] != i["value"]:
-                del airplain_food[j]
-            if pd.isna((float(i["value"]))) == True:
-                # print({pd.isna((float(i["value"])))})
-                del airplain_food[j]
-                print(airplain_food)
-            else:
-                print(pd.isna((float(i["value"]))))
-    except IndexError:
-        print("index error")
+    for j, i in enumerate(airplain_food):
+        if i["value"] == "NaN":
+            del airplain_food[j]
+        if i["value"] != i["value"]:
+            del airplain_food[j]
+        if pd.isna((float(i["value"]))) == True:
+            # print({pd.isna((float(i["value"])))})
+            print(airplain_food[j])
+            del airplain_food[j]
+            print(airplain_food)
+        else:
+            print(pd.isna((float(i["value"]))))
     # print(airplain_food)
     senti_arr = [
         {"name": "positive", "value": senti_dict["pos"]},
@@ -140,9 +132,9 @@ def getFood(request, airport):
         {"name": "neutral", "value": senti_dict["neu"]},
     ]
     arrow_fin = [
-        {"name": 'rating', "data": arrow["rating"]},
-        {"name": 'recommend', "data": arrow["recomm"]},
-        {"name": 'Value for money', "data": arrow["value"]}
+        {"name": 'Flight Comfort Rating', "data": arrow["rating"]},
+        {"name": 'Recommended', "data": arrow["recomm"]},
+        {"name": 'Value for Money', "data": arrow["value"]}
     ]
     for val in arrow_fin:
         for j, cc in enumerate(val["data"]):

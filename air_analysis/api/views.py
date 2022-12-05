@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import Airport_feedbacks
 from rake_nltk import Rake
+from bson.json_util import dumps, loads
 from .searializer import AirPort_serializer
 from pymongo import MongoClient
 import nltk
@@ -23,26 +24,35 @@ stop_words = set(stopwords.words('english'))
 
 
 # For Gensim
-client = MongoClient('mongodb://localhost:27017')
-db = client['Airport_review_analysis']
+client = MongoClient(
+    'mongodb://localhost/mydb')
+db = client['Airport_Analysis']
 coll = db["airport_feedbacks"]
 food_db = db["food airlines"]
+lat_long_db = db["Airport_lat_long"]
 sid = SentimentIntensityAnalyzer()
-# nltk.download("omw-1.4")
-# sp = spacy.load("en_core_web_sm")
-# from pymongo import Connection
-# server = "localhost"
-# port = 27017
-# # Establish a connection with mongo instance.
-# conn = Connection(server, port)
 
 
 @api_view(['GET'])
-def getRoutes(request):
+def getRoutes(request, airport):
     fields = coll.find({}).limit(20)
-    # print(fields)
+    airport_loc = lat_long_db.find(
+        {"City/Town": {'$regex': str(airport.split("-ai")[0]).upper(), '$options': 'i'}})
+    list_cur = list(airport_loc)
+    print(list_cur)
+    if not bool(list_cur):
+        airport_loc = lat_long_db.find(
+            {"Airport Name": {'$regex': str(airport.split("-ai")[0]).upper(), '$options': 'i'}})
+    # print(airport_loc)
+    list_cur = list(airport_loc)
+    out = {"lat": 0, "long": 0}
+    if bool(list_cur):
+        out = {
+            "lat": list_cur[0]["Latitude Decimal Degrees"],
+            "long": list_cur[0]["Longitude Decimal Degrees"]
+        }
     time_graph = coll.find(
-        {"airport_name": "mumbai-airport"}, {"_id": 0, "airport_name": 1, "date": 1, "overall_rating": 1}).sort("date")
+        {"airport_name": airport}, {"_id": 0, "airport_name": 1, "date": 1, "overall_rating": 1}).sort("date")
     time_details = []
     for i in time_graph:
         i["date"] = i["date"].strftime("%d %B, %Y")
@@ -101,7 +111,7 @@ def getRoutes(request):
     count_array = [i/5 for i in count_array]
     # print(count_array)
     r = requests.get(
-        "https://unsplash.com/s/photos/mumbai-airport").text
+        "https://unsplash.com/s/photos/"+airport).text
     soup = BeautifulSoup(r, 'html.parser')
     images = soup.find_all('img')
     # print(images[5]["src"])
@@ -112,14 +122,15 @@ def getRoutes(request):
         "time_analysis": time_details,
         "rating_analysis": count_array,
         "image": images[15]["src"],
-        "tickets": comments_fin
+        "tickets": comments_fin,
+        "coors": out
     }
     return JsonResponse(final_ob, safe=False)
 
 
 @api_view(['GET'])
-def getWord(request):
-    fields = coll.find({"airport_name": "chennai-airport"},
+def getWord(request, route):
+    fields = coll.find({"airport_name": route},
                        {"_id": 0, "content": 1}).limit(15)
     feautures = ["airport", "terminal", "check in",
                  "security", "queue", "experience", "toilets", "shop"]
@@ -224,19 +235,19 @@ def getWord(request):
             # for i in tagged:
             #     print(i)
     # ll=senti_dict.items()
-    ll = []
+    analytics = []
     for key, value in senti_dict.items():
-        ll.append({
+        analytics.append({
             key: value
         })
-    return JsonResponse(ll, safe=False)
+    return JsonResponse(analytics, safe=False)
 
 
 @csrf_exempt
-def change_db(request):
+def change_db(request, portName):
     if request.method == "POST":
         data = JSONParser().parse(request)
-        fields = coll.find({"$and": [{"airport_name": "chennai-airport"}, {"content": {"$regex": data["tag"], '$options': 'i'}}]},
+        fields = coll.find({"$and": [{"airport_name": portName}, {"content": {"$regex": data["tag"], '$options': 'i'}}]},
                            {"_id": 0, "content": 1, "author": 1, "date": 1, "overall_rating": 1, "author_country": 1}).limit(15)
         fina_arr = []
         for i in fields:
