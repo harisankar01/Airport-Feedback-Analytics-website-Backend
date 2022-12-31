@@ -1,4 +1,3 @@
-import math
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from django.shortcuts import render
@@ -7,9 +6,13 @@ from pymongo import MongoClient
 from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
-import pandas as pd
-client = MongoClient(
-    'mongodb://localhost/mydb')
+import math as pd
+import environ
+from api.db import connect
+env = environ.Env()
+# reading .env file
+environ.Env.read_env()
+client = connect()
 db = client['Airport_Analysis']
 food_db = db["airline_seats"]
 schedule_db = db["flight_schedule"]
@@ -118,13 +121,13 @@ def getReviews(request, airport):
             del airplain_food[j]
         if i["value"] != i["value"]:
             del airplain_food[j]
-        if pd.isna((float(i["value"]))) == True:
+        if pd.isnan((float(i["value"]))) == True:
             # print({pd.isna((float(i["value"])))})
             print(airplain_food[j])
             del airplain_food[j]
             print(airplain_food)
         else:
-            print(pd.isna((float(i["value"]))))
+            print(pd.isnan((float(i["value"]))))
     # print(airplain_food)
     senti_arr = [
         {"name": "positive", "value": senti_dict["pos"]},

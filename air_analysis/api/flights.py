@@ -1,4 +1,4 @@
-import math
+import math as pd
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from django.shortcuts import render
@@ -7,16 +7,13 @@ from pymongo import MongoClient
 from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
-import pandas as pd
 from pymongo.server_api import ServerApi
-import dns.resolver
-dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
-dns.resolver.default_resolver.nameservers = ['8.8.8.8']
-client = MongoClient(
-    'mongodb://localhost/mydb',
-    server_api=ServerApi('1'),
-    serverSelectionTimeoutMS=5000
-)
+import environ
+from api.db import connect
+env = environ.Env()
+# reading .env file
+environ.Env.read_env()
+client = connect()
 db = client['Airport_Analysis']
 food_db = db["food airlines"]
 schedule_db = db["flight_schedule"]

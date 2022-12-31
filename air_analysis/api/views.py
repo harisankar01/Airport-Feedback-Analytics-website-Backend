@@ -1,5 +1,4 @@
 import datetime
-from lib2to3.pgen2 import token
 from bs4 import BeautifulSoup
 import requests
 from django.views.decorators.csrf import csrf_exempt
@@ -8,15 +7,11 @@ import nltk
 from rest_framework.parsers import JSONParser
 from django.shortcuts import render
 from django.http import JsonResponse
-from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models import Airport_feedbacks
-from rake_nltk import Rake
-from bson.json_util import dumps, loads
 from .searializer import AirPort_serializer
 from pymongo import MongoClient
 import nltk
-from nltk import Tree
+from api.db import connect
 # from snippets.serializers import SnippetSerializer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
@@ -24,8 +19,7 @@ stop_words = set(stopwords.words('english'))
 
 
 # For Gensim
-client = MongoClient(
-    'mongodb://localhost/mydb')
+client = connect()
 db = client['Airport_Analysis']
 coll = db["airport_feedbacks"]
 food_db = db["food airlines"]
