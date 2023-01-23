@@ -12,4 +12,5 @@ beautifulsoup4==4.10.0
 requests==2.27.1
 gunicorn==20.0.4
 pytz==2020.1
+asgiref==3.5.2
 coverage==5.5
