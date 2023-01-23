@@ -1,8 +1,5 @@
 from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.corpus import stopwords
-from django.shortcuts import render
 from django.http import JsonResponse
-from pymongo import MongoClient
 from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
