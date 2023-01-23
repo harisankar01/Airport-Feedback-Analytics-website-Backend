@@ -4,7 +4,8 @@ import requests
 from django.views.decorators.csrf import csrf_exempt
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
-nltk.download('vader_lexicon')
+nltk.data.path.append("/tmp")
+nltk.download("vader_lexicon'", download_dir="/tmp")
 from rest_framework.parsers import JSONParser
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
