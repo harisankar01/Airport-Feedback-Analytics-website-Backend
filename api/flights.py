@@ -1,11 +1,12 @@
+from api.db import connect
+import environ
 import math as pd
 from nltk.tokenize import word_tokenize, sent_tokenize
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
-import environ
-from api.db import connect
+nltk.download('vader_lexicon')
 env = environ.Env()
 # reading .env file
 environ.Env.read_env()
