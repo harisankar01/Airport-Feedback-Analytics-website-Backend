@@ -7,6 +7,7 @@ from pymongo import MongoClient
 from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
+nltk.download('stopwords')
 from pymongo.server_api import ServerApi
 import environ
 from api.db import connect

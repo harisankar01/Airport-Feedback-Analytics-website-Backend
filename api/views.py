@@ -4,13 +4,13 @@ import requests
 from django.views.decorators.csrf import csrf_exempt
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
+nltk.download('stopwords')
 from rest_framework.parsers import JSONParser
 from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from .searializer import AirPort_serializer
 from pymongo import MongoClient
-import nltk
 from api.db import connect
 # from snippets.serializers import SnippetSerializer
 from nltk.corpus import stopwords
