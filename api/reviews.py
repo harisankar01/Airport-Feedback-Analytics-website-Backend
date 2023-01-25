@@ -3,8 +3,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
-nltk.download("vader_lexicon'", download_dir="./tmp/nltk_data")
-nltk.data.path.append("./tmp/nltk_data")
+nltk.download("vader_lexicon'", download_dir="/var/lang/nltk_data")
 import math as pd
 import environ
 from api.db import connect
