@@ -119,12 +119,12 @@ def getFood(request, airport):
                 del airplain_food[j]
             if i["value"] != i["value"]:
                 del airplain_food[j]
-            if pd.isna((float(i["value"]))) == True:
+            if pd.isnan((float(i["value"]))) == True:
                 # print({pd.isna((float(i["value"])))})
                 del airplain_food[j]
                 print(airplain_food)
             else:
-                print(pd.isna((float(i["value"]))))
+                print(pd.isnan((float(i["value"]))))
     except IndexError:
         print("index error")
     # print(airplain_food)
@@ -140,7 +140,7 @@ def getFood(request, airport):
     ]
     for val in arrow_fin:
         for j, cc in enumerate(val["data"]):
-            if pd.isna((float(cc))) == True:
+            if pd.isnan((float(cc))) == True:
                 val["data"][j] = 0
     final_op = [json_op, senti_arr, airplain_food, comment_fin, arrow_fin]
     return JsonResponse(final_op, safe=False)
