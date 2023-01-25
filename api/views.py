@@ -28,7 +28,6 @@ def getRoutes(request, airport):
     airport_loc = lat_long_db.find(
         {"City/Town": {'$regex': str(airport.split("-ai")[0]).upper(), '$options': 'i'}})
     list_cur = list(airport_loc)
-    print(list_cur)
     if not bool(list_cur):
         airport_loc = lat_long_db.find(
             {"Airport Name": {'$regex': str(airport.split("-ai")[0]).upper(), '$options': 'i'}})
@@ -74,9 +73,6 @@ def getRoutes(request, airport):
         count_array[5] += float(i["airport_shopping_rating"])
         count_array[6] += float(i["wifi_connectivity_rating"])
         count_array[7] += float(i["airport_staff_rating"])
-        # for key in sorted(pred.keys()):
-        #     print('{}: {}, '.format(key, pred[key]), end='')
-        # print("/n")
         analise = pred["compound"]
         if analise >= 0.5:
             pos += 1
@@ -240,7 +236,6 @@ def change_db(request, portName):
                            {"_id": 0, "content": 1, "author": 1, "date": 1, "overall_rating": 1, "author_country": 1}).limit(15)
         fina_arr = []
         for i in fields:
-            print(i)
             if i["overall_rating"] == "":
                 i["overall_rating"] = 0
             fina_arr.append({

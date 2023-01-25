@@ -1,5 +1,6 @@
 from api.db import connect
 import environ
+import numpy
 import math as pd
 from nltk.tokenize import word_tokenize, sent_tokenize
 from django.http import JsonResponse
@@ -20,13 +21,11 @@ sid = SentimentIntensityAnalyzer()
 def getReviews(request, airport):
     data = airport
     data = data.split("-")[0].capitalize()
-    # print(data)
     flights = schedule_db.find(
         {"origin": data}, {"_id": 0, "airline": 1, "dayOfWeek": 1})
     su_arr = []
     for fi in flights:
         summa = fi["airline"].split(" ")
-        # print(summa)
         if len(summa) == 1:
             summa = "".join(summa).lower()
         else:
@@ -38,8 +37,6 @@ def getReviews(request, airport):
         "recomm": [],
         "rating": []
     }
-
-    # print(su_arr)
     json_op = {
         "pos_items": [],
         "neg_items": []
@@ -61,8 +58,6 @@ def getReviews(request, airport):
         food_names = ["screen", "seat", "comfortable", "service",
                       "food", "customers", "sleep", "legs", "cost"]
         for i in fields:
-
-            # print(i)
             if i["overall_rating"] == "" or i["overall_rating"] == None:
                 i["overall_rating"] = 0
             arrow["rating"].extend([i["overall_rating"]])
@@ -72,7 +67,6 @@ def getReviews(request, airport):
             senti = sid.polarity_scores(i["content"])["compound"]
             tokenized = sent_tokenize(i["content"].lower())
             for line in tokenized:
-                # print(line)
                 for j in food_names:
                     tokens = word_tokenize(line)
                     tagged = nltk.pos_tag(tokens)
@@ -114,18 +108,12 @@ def getReviews(request, airport):
             "value": valie+10
         })
     for j, i in enumerate(airplain_food):
-        if i["value"] == "NaN":
-            del airplain_food[j]
-        if i["value"] != i["value"]:
-            del airplain_food[j]
-        if pd.isnan((float(i["value"]))) == True:
-            # print({pd.isna((float(i["value"])))})
+        if pd.isnan(float(i["value"])*5) or (type(i["value"]) == float and numpy.isnan(i["value"])) or i["value"] != i["value"] or i["value"] in ["NaN", "nan"]:
             print(airplain_food[j])
             del airplain_food[j]
             print(airplain_food)
         else:
             print(pd.isnan((float(i["value"]))))
-    # print(airplain_food)
     senti_arr = [
         {"name": "positive", "value": senti_dict["pos"]},
         {"name": "negative", "value": senti_dict["neg"]},

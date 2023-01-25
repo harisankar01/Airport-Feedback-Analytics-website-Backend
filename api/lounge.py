@@ -1,4 +1,5 @@
 import math as pd
+import numpy
 from nltk.tokenize import word_tokenize, sent_tokenize
 from django.http import JsonResponse
 from api.db import connect
@@ -111,17 +112,9 @@ def LoungeReviews(request, airport):
             "value": valie+10
         })
     for j, i in enumerate(airplain_food):
-        if i["value"] == "NaN":
-            del airplain_food[j]
-        if i["value"] != i["value"]:
-            del airplain_food[j]
-        if pd.isnan((float(i["value"]))) == True:
+        if pd.isnan(float(i["value"])*5) or (type(i["value"]) == float and numpy.isnan(i["value"])) or i["value"] != i["value"] or i["value"] in ["NaN", "nan"]:
             # print({pd.isna((float(i["value"])))})
-            print(airplain_food[j])
             del airplain_food[j]
-            print(airplain_food)
-        else:
-            print(pd.isnan((float(i["value"]))))
     # print(airplain_food)
     senti_arr = [
         {"name": "positive", "value": senti_dict["pos"]},
