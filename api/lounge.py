@@ -5,8 +5,7 @@ from api.db import connect
 from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
-nltk.download("vader_lexicon", download_dir="/tmp")
-nltk.download("punkt", download_dir="/tmp")
+nltk.download("popular", download_dir="/tmp")
 nltk.data.path.append("/tmp")
 client = connect()
 db = client['Airport_Analysis']

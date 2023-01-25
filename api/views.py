@@ -11,9 +11,7 @@ import requests
 from django.views.decorators.csrf import csrf_exempt
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
-nltk.download("vader_lexicon", download_dir="/tmp")
-nltk.download("punkt", download_dir="/tmp")
-nltk.download("stopwords", download_dir="/tmp")
+nltk.download("popular", download_dir="/tmp")
 nltk.data.path.append("/tmp")
 stop_words = set(stopwords.words('english'))
 
