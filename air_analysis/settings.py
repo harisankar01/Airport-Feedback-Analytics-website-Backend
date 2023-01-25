@@ -25,10 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-76&@92zt8f%)&t-kz)ukebi=jx2ir4pg7jb^rhc^v@9z(^o$ia"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app', '.now.sh']
+ALLOWED_HOSTS = [
+    '127.0.0.1', 'https://airport-feedback-analytics-website.vercel.app', '.now.sh']
 
 
 # Application definition
