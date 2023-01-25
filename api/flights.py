@@ -6,10 +6,8 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
-import os
-dir_path = os.path.dirname(os.path.realpath(__file__)) + "/nltk_data"
-nltk.download("vader_lexicon", download_dir=dir_path)
-nltk.data.path.append(dir_path)
+nltk.download("vader_lexicon", download_dir="/tmp")
+nltk.data.path.append("/tmp")
 # nltk.data.path.append("./tmp/nltk_data")
 env = environ.Env()
 # reading .env file
