@@ -26,8 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-76&@92zt8f%)&t-kz)ukebi=jx2ir4pg7jb^rhc^v@9z(^o$ia"
 
 
-ALLOWED_HOSTS = [
-    '127.0.0.1', 'https://airport-feedback-analytics-website.vercel.app', '.now.sh']
+ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app', '.now.sh']
 
 
 # Application definition
@@ -76,7 +75,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "air_analysis.wsgi.application"
 
 CORS_ORIGIN_WHITELIST = [
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'https://airport-feedback-analytics-website.vercel.app'
 ]
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
