@@ -86,7 +86,7 @@ def getRoutes(request, airport):
                 "user_name": i["author"],
                 "date": i["date"],
                 "user_country": i["author_country"],
-                "rating": float(i["overall_rating"]) % 5
+                "rating": float(i["overall_rating"] if i["overall_rating"] != '' else 0) % 5
             })
             neg += 1
         else:
